@@ -1,21 +1,18 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Main where
 
 import Data.Char
+import Data.Validation
 
 newtype Password = Password String deriving (Show)
 
-newtype Error = Error String deriving (Show)
+newtype Error = Error [String] deriving (Semigroup, Show)
 
 newtype Username = Username String deriving (Show)
 
 -- PRODUCT TYPE
 data User = User Username Password deriving (Show)
-
--- Applicative
-makeUser :: Username -> Password -> Either Error User
-makeUser name password =
-  User <$> validateUsername name
-    <*> validatePassword password
 
 -- checkLength :: Int -> String -> Either Error String
 -- checkLength len str = case (length str > len) of
@@ -28,25 +25,26 @@ checkPasswordLength password =
     True ->
       Left
         ( Error
-            "Your password cannot be longer \
-            \ than 20 characters"
+            [ "Your password cannot be longer \
+              \ than 20 characters"
+            ]
         )
     False -> Right (Password password)
 
 checkUsernamesLength :: String -> Either Error Username
 checkUsernamesLength name =
   case (length name > 15) of
-    True -> Left (Error "Username cannot be longer than 15 characters")
+    True -> Left (Error ["Username cannot be longer than 15 characters"])
     False -> Right (Username name)
 
 requireAlphaNum :: String -> Either Error String
 requireAlphaNum xs =
   case (all isAlphaNum xs) of
-    False -> Left (Error "Your password need alpha numeric characters")
+    False -> Left (Error ["Your password need alpha numeric characters"])
     True -> Right xs
 
 cleanWhitespace :: String -> Either Error String
-cleanWhitespace "" = Left (Error "No a valid passwors")
+cleanWhitespace "" = Left (Error ["No a valid passwords"])
 cleanWhitespace (x : xs) =
   case (isSpace x) of
     True -> cleanWhitespace xs
@@ -62,11 +60,11 @@ cleanWhitespace (x : xs) =
 --         Nothing -> "Your password require letters and numbers"
 --         Just password -> "Valid password"
 
-validatePassword :: Password -> Either Error Password
+validatePassword :: Password -> Validation Error Password
 validatePassword (Password password) =
-  cleanWhitespace password -- String -> Either Error String
-    >>= requireAlphaNum -- String -> Either Error Password
-    >>= checkPasswordLength -- String -> Either Error Password
+  case (cleanWhitespace password) of
+    Failure err -> Failure err
+    Success password2 -> requireAlphaNum password2 *> checkPasswordLength password2
 
 validateUsername :: Username -> Either Error Username
 validateUsername (Username username) =
@@ -90,6 +88,12 @@ printTestResult r =
 --   do
 --     eq 1 (checkPasswordLength "somePassword") (Right "somePassword")
 --     eq 2 (checkPasswordLength "wainolaLoveBooks") (Right "wainolaLoveBooks")
+
+-- Applicative
+makeUser :: Username -> Password -> Either Error User
+makeUser name password =
+  User <$> validateUsername name
+    <*> validatePassword password
 
 main :: IO ()
 main = do
