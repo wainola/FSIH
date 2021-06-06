@@ -1,9 +1,21 @@
 module Main where
+
 import Data.Char
 
-newtype Password = Password String deriving Show
-newtype Error = Error String deriving Show
-newtype Username = Username String deriving Show
+newtype Password = Password String deriving (Show)
+
+newtype Error = Error String deriving (Show)
+
+newtype Username = Username String deriving (Show)
+
+-- PRODUCT TYPE
+data User = User Username Password deriving (Show)
+
+-- Applicative
+makeUser :: Username -> Password -> Either Error User
+makeUser name password =
+  User <$> validateUsername name
+    <*> validatePassword password
 
 -- checkLength :: Int -> String -> Either Error String
 -- checkLength len str = case (length str > len) of
@@ -13,10 +25,14 @@ newtype Username = Username String deriving Show
 checkPasswordLength :: String -> Either Error Password
 checkPasswordLength password =
   case (length password < 10) || (length password > 20) of
-    True -> Left (Error "Your password cannot be longer \
-    \ than 20 characters")
+    True ->
+      Left
+        ( Error
+            "Your password cannot be longer \
+            \ than 20 characters"
+        )
     False -> Right (Password password)
-  
+
 checkUsernamesLength :: String -> Either Error Username
 checkUsernamesLength name =
   case (length name > 15) of
@@ -49,9 +65,13 @@ cleanWhitespace (x : xs) =
 validatePassword :: Password -> Either Error Password
 validatePassword (Password password) =
   cleanWhitespace password -- String -> Either Error String
-  >>= requireAlphaNum -- String -> Either Error Password
-  >>= checkPasswordLength -- String -> Either Error Password
+    >>= requireAlphaNum -- String -> Either Error Password
+    >>= checkPasswordLength -- String -> Either Error Password
 
+validateUsername :: Username -> Either Error Username
+validateUsername (Username username) =
+  cleanWhitespace username
+    >>= checkUsernamesLength
 
 printTestResult :: Either String () -> IO ()
 printTestResult r =
@@ -59,7 +79,6 @@ printTestResult r =
     Left err -> putStrLn err
     Right () -> putStrLn "All test passed."
 
-  
 -- eq :: (Eq a, Show a) => Int -> a -> a -> Either String ()
 -- eq n actual expected =
 --   case (actual == expected) of
@@ -74,6 +93,8 @@ printTestResult r =
 
 main :: IO ()
 main = do
+  putStrLn "Please enter a username"
+  username <- Username <$> getLine
   putStrLn "Please enter a password"
   password <- Password <$> getLine
-  print (validatePassword password)
+  print (makeUser username password)
