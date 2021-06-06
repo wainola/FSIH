@@ -30,8 +30,14 @@ checkPassword password =
         Nothing -> "Your password require letters and numbers"
         Just password -> "Valid password"
 
+validatePassword :: String -> Maybe String
+validatePassword password =
+  cleanWhitespace password
+  >>= requireAlphaNum
+  >>= checkPasswordLength
+
 main :: IO ()
 main = do
   putStrLn "Please enter a password"
   password <- getLine
-  print (checkPassword password)
+  print (validatePassword password)
