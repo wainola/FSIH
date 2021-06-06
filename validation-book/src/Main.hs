@@ -5,6 +5,9 @@ newtype Password = Password String deriving Show
 newtype Error = Error String deriving Show
 newtype Username = Username String deriving Show
 
+-- checkLength :: Int -> String -> Either Error String
+
+
 checkPasswordLength :: String -> Either Error Password
 checkPasswordLength password =
   case (length password < 10) || (length password > 20) of
