@@ -6,7 +6,9 @@ newtype Error = Error String deriving Show
 newtype Username = Username String deriving Show
 
 -- checkLength :: Int -> String -> Either Error String
-
+-- checkLength len str = case (length str > len) of
+--   True -> Left (Error "Your password cannot be longer than " ++ len ++ " character")
+--   False -> Right str
 
 checkPasswordLength :: String -> Either Error Password
 checkPasswordLength password =
